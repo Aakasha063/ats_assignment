@@ -62,9 +62,13 @@ class SearchCandidateAPIView(APIView):
         if not name:
             return Response({'error': 'Please provide a name to search'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # we will split the name by space and search for each term in name
         search_terms = name.split()
+
+        # Creating a query to search for candidates whose names contain any of the search terms
         query = Q(*[Q(name__icontains=term) for term in search_terms], _connector=Q.OR)
 
+        # Filter candidates based on the query and annotate them with a relevancy score
         candidates = Candidate.objects.filter(query).annotate(
             relevancy=Sum(
                 Case(*(When(name__icontains=term, then=1) for term in search_terms), 
